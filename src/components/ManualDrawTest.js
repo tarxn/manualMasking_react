@@ -5,26 +5,48 @@ export default function ManualDrawTest(){
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [isErasing, setIsErasing] = useState(false);
-    const [brushSize, setBrushSize] = useState(50);
+    const [brushSize, setBrushSize] = useState(5);
     // const [opacity, setOpacity] = useState(100);
     const [cursorUrl, setCursorUrl] = useState('');
+    const [coordinates, setCoordinates] = useState([]);
+    const [scale, setScale] = useState(1); // Initial scale factor
 
-    const brushColor = 'rgba(0, 221, 255, 1)';
+    const brushColor = 'rgba(255, 255, 255, 1)';
 
+    const transformableRef = useRef(null);
+
+    const handleMouseMove = (event) => {
+        if (event.buttons === 0) {  // Check if no mouse buttons are pressed
+            const element = transformableRef.current;
+            const rect = element.getBoundingClientRect();
+            const x = event.clientX - rect.left; // x position within the element.
+            const y = event.clientY - rect.top;  // y position within the element.
+        
+            // Calculate percentage within the element for transform-origin
+            const xPercent = (x / rect.width) * 100;
+            const yPercent = (y / rect.height) * 100;
+        
+            // Set the transform origin to the cursor's position within the element
+            element.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+          }
+    };
     useEffect(() => {
         const updateCursor = () => {
+            const brushSize_ = brushSize * scale;
             const cursorCanvas = document.createElement('canvas');
-            cursorCanvas.width = brushSize * 2;
-            cursorCanvas.height = brushSize * 2;
+            cursorCanvas.width = brushSize_ * 2;
+            cursorCanvas.height = brushSize_ * 2;
             const ctx = cursorCanvas.getContext('2d');
 
             // Configure the style of the brush cursor
             ctx.beginPath();
-            ctx.arc(brushSize, brushSize, brushSize, 0, 2 * Math.PI);
-            ctx.strokeStyle = brushColor; // Use the selected brush color
-            ctx.setLineDash([5, 3]); // Creates a dotted effect for the stroke
-            ctx.lineWidth = 1; // Line width can be adjusted
+            ctx.arc(brushSize_, brushSize_, brushSize_, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'white'; // Use the selected brush color
+            ctx.setLineDash([4, 3]); // Creates a dotted effect for the stroke
+            ctx.lineWidth = 2; // Line width can be adjusted
             ctx.stroke(); // Stroke the circle instead of filling it
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; // Color to fill the circle
+            ctx.fill(); // Fill the circle
 
             // Convert canvas to data URL and set as cursor
             cursorCanvas.toBlob((blob) => {
@@ -34,7 +56,7 @@ export default function ManualDrawTest(){
         };
 
         updateCursor();
-    }, [brushSize]); // Recreate the cursor when brush size changes
+    }, [brushSize,scale]); // Recreate the cursor when brush size changes
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -60,39 +82,28 @@ export default function ManualDrawTest(){
         ctx.lineJoin = 'round';
         ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
     
-        // Check if there's a last position to start from
         if (ctx.lastX !== undefined && ctx.lastY !== undefined) {
             // Start from the last position
             ctx.beginPath();
             ctx.moveTo(ctx.lastX, ctx.lastY);
-    
-            // Calculate the distance to the new point
-            const dx = x - ctx.lastX;
-            const dy = y - ctx.lastY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const steps = distance / 2; // Calculate number of intermediate steps based on the distance
-            const stepX = dx / steps;
-            const stepY = dy / steps;
-    
-            // Fill in the gaps by drawing a line to each intermediate step
-            for (let step = 1; step <= steps; step++) {
-                ctx.lineTo(ctx.lastX + stepX * step, ctx.lastY + stepY * step);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(ctx.lastX + stepX * step, ctx.lastY + stepY * step);
-            }
+            ctx.lineTo(x, y); // Draw a line to the current x and y
+            ctx.stroke();
         }
     
         // Update the last positions for the next move
         ctx.lastX = x;
         ctx.lastY = y;
+        setCoordinates(prevCoords => [...prevCoords, { x, y }]);
     };
+    
 
     const endDrawing = () => {
         const ctx = canvasRef.current.getContext('2d');
         ctx.lastX = undefined; // Reset last positions
         ctx.lastY = undefined;
         setIsDrawing(false);
+        console.log('Coordinates:', coordinates);
+        setCoordinates([]);  // Clear coordinates after logging
     };
 
     const toggleEraser = () => {
@@ -186,34 +197,22 @@ export default function ManualDrawTest(){
 
     const imageSrc = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
-    const [scale, setScale] = useState(1); // Initial scale factor
 
     const handleWheel = (e) => {
-        e.preventDefault(); // Prevent the default scroll behavior
+        
         const delta = e.deltaY * -0.01; // Get the scroll delta and reverse the direction
         // Update the scale, clamp the values to avoid too much zoom in or out
-        setScale((prevScale) => Math.min(Math.max(1, prevScale + delta), 2));
+        setScale((prevScale) => Math.min(Math.max(1, prevScale + delta), 4));
+        // setBrushSize((prevBrushSize) => Math.max(prevBrushSize + delta *0.4 , 1));
     };
 
  
     return (
         <div>
             <div style={{overflow:'hidden', width:"500px", height:"500px", backgroundColor:"black"}}>
-            <div onWheel={handleWheel} id="canvasContainer" style={{ position: 'relative', width: '500px', height: '500px', border: '1px solid black' ,transform: `scale(${scale})`, // Apply the scale transform
-                        transformOrigin: 'center center',
-                        transition: 'transform 0.2s', }}>
-                <div
-                    // onWheel={handleWheel}
-                    // style={{
-                    //     maxWidth: '500px',
-                    //     maxHeight: '500px',
-                    //     overflow: 'auto',
-                    //     border: '1px solid black',
-                    //     transform: `scale(${scale})`, // Apply the scale transform
-                    //     transformOrigin: 'center center', // Set the origin of transformation
-                    //     transition: 'transform 0.2s', // Smooth transition for the transformation
-                    // }}
-                >
+            <div ref={transformableRef} onMouseMove={handleMouseMove} className="transformable" onWheel={handleWheel} id="canvasContainer" style={{ position: 'relative', width: '500px', height: '500px', border: '1px solid black' ,transform: `scale(${scale})`, // Apply the scale transform
+                        }}>
+                
                     <img id="backgroundImage" src={imageSrc}
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 , objectFit:"contain"}} alt="Background" />
                     <canvas
@@ -227,7 +226,6 @@ export default function ManualDrawTest(){
                         // style={{ position: 'absolute', top: 0, left: 0 }}
                         style={{ position: 'absolute', top: 0, left: 0 , cursor: `url(${cursorUrl}) ${brushSize} ${brushSize}, auto`, }}
                     />
-                </div>
             </div>
             </div>
            

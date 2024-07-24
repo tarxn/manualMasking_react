@@ -1,22 +1,15 @@
 canvas {
     border: 1px solid #ccc;
   }
-  .zoom-img {
-    width: 800px;
-    height: 600px;
-    overflow: hidden; /* Keep content from spilling outside */
-    cursor: zoom-in; /* Visual cue for zoom capability */
-  }
-  .zoom-img img {
-    object-fit: cover; /* Cover the container without stretching the image */
-    position: absolute; /* Align with canvas */
-}
   
-  .zoom-img img, .zoom-img canvas {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.3s ease;
-    transform-origin: center; /* Ensure zoom centers on the middle */
+  #transformable {
+    width: 200px;
+    height: 200px;
+    background-color: lightblue;
+    transition: transform 0.1s;
   }
   
-  
+  /* This class is added to scale the element, demonstrating the effect of transform-origin */
+  #transformable:hover {
+    transform: scale(1.5);
+  }
