@@ -10,7 +10,6 @@ This project demonstrates a powerful web application built using React JS and HT
 
 - **Photo Drawing**: Allows users to freely draw on a loaded photo using a variety of brush sizes and colors.
   Brush and eraser sample:
-![Screenshot 2024-07-24 171612](https://github.com/user-attachments/assets/7fc260cc-6d86-486d-a2ce-47a59f0c0aad)
 ![Screenshot 2024-07-24 171710](https://github.com/user-attachments/assets/c600a303-9741-4577-8a37-637da9f0812c)
 
 - **Mask Creation**: Automatically generates a mask based on user drawings.
